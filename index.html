@@ -6,7 +6,7 @@
   <title>Puffless</title>
   <meta name="theme-color" content="#f6f7fb" />
 
-  <!-- Telegram Mini Apps SDK (работает только по HTTPS, GitHub Pages подходит) -->
+  <!-- Telegram Mini Apps SDK (работает по HTTPS) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -16,6 +16,7 @@
       --muted:#64748b;
 
       --stroke: rgba(15,23,42,.10);
+      --edge: rgba(255,255,255,.10);
       --shadow: 0 18px 55px rgba(15,23,42,.10);
       --r: 24px;
 
@@ -30,8 +31,12 @@
       --btnBg: rgba(255,255,255,.78);
       --inputBg: rgba(255,255,255,.84);
 
-      /* TG viewport */
+      /* tg viewport */
       --tg-vh: 100vh;
+
+      /* chart */
+      --chartTrack: rgba(15,23,42,0.06);
+      --chartAxis: rgba(15,23,42,0.12);
     }
 
     *{box-sizing:border-box}
@@ -46,9 +51,9 @@
       height: var(--tg-vh);
 
       background:
-        radial-gradient(900px 520px at 15% 0%, var(--accent), transparent 55%),
-        radial-gradient(760px 520px at 85% 10%, var(--accent2), transparent 55%),
-        radial-gradient(700px 520px at 50% 100%, rgba(34,197,94,.10), transparent 60%),
+        radial-gradient(900px 520px at 15% 0%, var(--accent), transparent 58%),
+        radial-gradient(760px 520px at 85% 10%, var(--accent2), transparent 58%),
+        radial-gradient(700px 520px at 50% 100%, rgba(34,197,94,.10), transparent 62%),
         linear-gradient(180deg, var(--bg), #f3f6ff);
 
       overflow-x:hidden;
@@ -56,6 +61,22 @@
 
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* subtle grain */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(1px 1px at 10% 20%, rgba(0,0,0,.06), transparent 60%),
+        radial-gradient(1px 1px at 30% 70%, rgba(0,0,0,.05), transparent 60%),
+        radial-gradient(1px 1px at 70% 30%, rgba(0,0,0,.05), transparent 60%),
+        radial-gradient(1px 1px at 90% 80%, rgba(0,0,0,.04), transparent 60%);
+      opacity:.35;
+      mix-blend-mode: soft-light;
+      filter: blur(.2px);
     }
 
     /* убираем синий highlight/фокус */
@@ -69,6 +90,12 @@
     button:focus{ outline:none; }
     input, select{ user-select:text; -webkit-user-select:text; }
 
+    /* плавные переходы по теме */
+    body, .glass, .pill, .chip, .kpi, .chartBox, button, input, select{
+      transition: background-color .35s ease, color .35s ease, border-color .35s ease,
+                  box-shadow .35s ease, filter .25s ease, transform .12s ease;
+    }
+
     .wrap{
       max-width: 980px;
       margin: 0 auto;
@@ -77,7 +104,7 @@
     }
 
     header{display:flex; justify-content:space-between; align-items:center; gap:12px; padding: 6px 2px 14px;}
-    .brand .t1{font-weight:850; letter-spacing:-.3px; font-size:18px;}
+    .brand .t1{font-weight:880; letter-spacing:-.4px; font-size:18px;}
     .brand .t2{font-size:12px; color:var(--muted); margin-top:3px;}
     .pill{
       padding:10px 12px; border-radius:999px;
@@ -109,8 +136,17 @@
         radial-gradient(380px 220px at 20% 10%, rgba(255,255,255,.92), transparent 60%),
         radial-gradient(420px 260px at 85% 35%, rgba(255,255,255,.62), transparent 60%),
         radial-gradient(520px 320px at 45% 120%, rgba(255,255,255,.62), transparent 60%);
-      opacity:.35; /* чуть спокойнее */
+      opacity:.30;
       pointer-events:none;
+    }
+    /* edge */
+    .glass::after{
+      content:"";
+      position:absolute; inset:0;
+      border-radius: var(--r);
+      pointer-events:none;
+      border:1px solid var(--edge);
+      opacity:.9;
     }
 
     .card{padding:16px}
@@ -118,7 +154,7 @@
     .big{
       font-size:44px;
       letter-spacing:-1px;
-      font-weight:900;
+      font-weight:950;
       line-height:1.05;
     }
 
@@ -139,17 +175,24 @@
       color: var(--txt);
       padding: 12px 14px;
       border-radius: 16px;
-      font-weight:800;
+      font-weight:850;
       cursor:pointer;
-      transition: transform .08s ease, filter .2s ease;
       box-shadow: 0 10px 24px rgba(15,23,42,.06);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
-    button:active{transform: scale(.98)}
+    button:hover{ filter: brightness(1.02); }
+    button:active{
+      transform: scale(.985);
+      filter: brightness(.98);
+    }
+
     button.primary{
-      background: linear-gradient(135deg, rgba(99,102,241,.22), rgba(236,72,153,.16));
+      background: linear-gradient(135deg, rgba(99,102,241,.28), rgba(236,72,153,.18));
+      box-shadow: 0 16px 40px rgba(0,0,0,.14);
     }
     button.warn{
-      background: linear-gradient(135deg, rgba(248,113,113,.18), rgba(251,191,36,.10));
+      background: linear-gradient(135deg, rgba(251,191,36,.18), rgba(248,113,113,.22));
     }
     button.ghost{ background: var(--btnBg); }
 
@@ -173,13 +216,14 @@
       color:var(--txt);
       padding: 12px 12px;
       outline:none;
-      font-weight:650;
+      font-weight:700;
     }
 
     .mini{font-size:12px; color:var(--muted); margin-top:12px; line-height:1.45}
     .status{margin-top:10px; font-size:12px; color:var(--muted); line-height:1.35}
     .status b{color:var(--txt)}
 
+    /* Chart */
     .chartBox{
       margin-top: 12px;
       padding: 12px;
@@ -192,8 +236,22 @@
       display:flex; justify-content:space-between; align-items:center; gap:10px;
       margin-bottom: 8px;
     }
-    .chartTop .l{font-size:12px; color:var(--muted)}
-    .chartTop .r{font-size:12px; color:var(--muted)}
+    .chartTop .l{font-size:12px; color:var(--muted); font-weight:750}
+    .chartTop .r{
+      display:flex; align-items:center; gap:8px;
+      font-size:12px; color:var(--muted);
+    }
+    .miniBtn{
+      border:1px solid var(--stroke);
+      background: var(--btnBg);
+      padding: 6px 10px;
+      border-radius: 12px;
+      font-weight:900;
+      cursor:pointer;
+      line-height:1;
+      box-shadow: 0 10px 20px rgba(0,0,0,.08);
+    }
+    .miniBtn:active{ transform: scale(.98); }
     canvas{width:100%; height:120px; display:block;}
 
     .errBox{
@@ -243,7 +301,6 @@
 
         <div class="row">
           <button class="primary" id="btnNow" type="button">Начать сейчас</button>
-          <button class="ghost" id="btnPick" type="button">Указать время</button>
           <button class="warn" id="btnSlip" type="button">Срыв</button>
           <button class="ghost" id="btnPuff" type="button">Затяжка</button>
         </div>
@@ -251,9 +308,13 @@
         <div class="chartBox">
           <div class="chartTop">
             <div class="l">Затяжки за 7 дней</div>
-            <div class="r" id="chartHint">сегодня: 0</div>
+            <div class="r">
+              <span id="chartHint">сегодня: 0</span>
+              <button class="miniBtn" id="btnUndoPuff" type="button" title="Отменить последнюю">↩︎</button>
+            </div>
           </div>
           <canvas id="chart" width="600" height="240"></canvas>
+          <div class="mini" id="chartScaleHint" style="margin-top:10px">Шкала: 0–40 (1–10 спокойно, 10–20 предупреждение, 20+ риск)</div>
         </div>
 
         <div class="status" id="status">Статус: <b>готово</b></div>
@@ -305,6 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const who = $("who");
   const errEl = $("err");
   const noteEl = $("storageNote");
+  const undoBtn = $("btnUndoPuff");
 
   function showErr(msg){
     if (!errEl) return;
@@ -347,7 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tp = tg.themeParams || {};
     const isDark = tg.colorScheme === "dark";
 
-    const bg = tp.bg_color || (isDark ? "#0b1220" : "#f6f7fb");
+    const bg = tp.bg_color || (isDark ? "#070b14" : "#f6f7fb");
     const text = tp.text_color || (isDark ? "#e5e7eb" : "#0f172a");
     const hint = tp.hint_color || (isDark ? "#9aa4b2" : "#64748b");
     const btn = tp.button_color || "#6366f1";
@@ -361,14 +423,17 @@ document.addEventListener("DOMContentLoaded", () => {
     root.setProperty("--accent2", hexToRgba("#ec4899", isDark ? 0.10 : 0.12));
 
     if (isDark) {
-      root.setProperty("--glassA", "rgba(17,24,39,.75)");
-      root.setProperty("--glassB", "rgba(17,24,39,.55)");
-      root.setProperty("--cardBg",  "rgba(17,24,39,.65)");
-      root.setProperty("--chipBg",  "rgba(17,24,39,.55)");
-      root.setProperty("--btnBg",   "rgba(17,24,39,.60)");
-      root.setProperty("--inputBg", "rgba(17,24,39,.62)");
-      root.setProperty("--stroke",  "rgba(255,255,255,.10)");
-      root.setProperty("--shadow",  "0 18px 55px rgba(0,0,0,.35)");
+      root.setProperty("--glassA", "rgba(17,24,39,.78)");
+      root.setProperty("--glassB", "rgba(17,24,39,.52)");
+      root.setProperty("--cardBg",  "rgba(30,41,59,.62)");
+      root.setProperty("--chipBg",  "rgba(30,41,59,.52)");
+      root.setProperty("--btnBg",   "rgba(30,41,59,.66)");
+      root.setProperty("--inputBg", "rgba(30,41,59,.60)");
+      root.setProperty("--stroke",  "rgba(255,255,255,.12)");
+      root.setProperty("--edge",    "rgba(255,255,255,.16)");
+      root.setProperty("--shadow",  "0 20px 70px rgba(0,0,0,.45)");
+      root.setProperty("--chartTrack","rgba(255,255,255,0.06)");
+      root.setProperty("--chartAxis","rgba(255,255,255,0.12)");
     } else {
       root.setProperty("--glassA", "rgba(255,255,255,.82)");
       root.setProperty("--glassB", "rgba(255,255,255,.58)");
@@ -377,15 +442,17 @@ document.addEventListener("DOMContentLoaded", () => {
       root.setProperty("--btnBg",   "rgba(255,255,255,.78)");
       root.setProperty("--inputBg", "rgba(255,255,255,.84)");
       root.setProperty("--stroke",  "rgba(15,23,42,.10)");
+      root.setProperty("--edge",    "rgba(255,255,255,.10)");
       root.setProperty("--shadow",  "0 18px 55px rgba(15,23,42,.10)");
+      root.setProperty("--chartTrack","rgba(15,23,42,0.06)");
+      root.setProperty("--chartAxis","rgba(15,23,42,0.12)");
     }
 
-    // Перерисуем фон body под тему
     document.body.style.background =
-      `radial-gradient(900px 520px at 15% 0%, var(--accent), transparent 55%),
-       radial-gradient(760px 520px at 85% 10%, var(--accent2), transparent 55%),
-       radial-gradient(700px 520px at 50% 100%, rgba(34,197,94,${isDark ? 0.07 : 0.10}), transparent 60%),
-       linear-gradient(180deg, var(--bg), ${isDark ? "#0a1020" : "#f3f6ff"})`;
+      `radial-gradient(900px 520px at 15% 0%, var(--accent), transparent 58%),
+       radial-gradient(760px 520px at 85% 10%, var(--accent2), transparent 58%),
+       radial-gradient(700px 520px at 50% 100%, rgba(34,197,94,${isDark ? 0.06 : 0.10}), transparent 62%),
+       linear-gradient(180deg, var(--bg), ${isDark ? "#050812" : "#f3f6ff"})`;
 
     try { tg.setHeaderColor("bg_color"); } catch {}
     try { tg.setBackgroundColor(bg); } catch {}
@@ -538,47 +605,115 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.closePath();
   }
 
-  function drawChart(){
+  // --- Chart: scale + colors + animation ---
+  let lastChartHeights = null;
+  let animRAF = null;
+
+  function getScaleMax(data){
+    // хотим чтобы 1–10 было маленьким => минимум 40
+    const maxVal = Math.max(0, ...data);
+    const rounded = Math.ceil(maxVal / 10) * 10;
+    return Math.max(40, rounded || 40);
+  }
+
+  function barGradient(ctx, y, h, v, isDark){
+    // диапазоны:
+    // 0–10: спокойный (сине-розовый)
+    // 10–20: предупреждение (желто-оранж)
+    // 20+: риск (красный)
+    let top, bottom;
+    if (v <= 10){
+      top = isDark ? "rgba(99,102,241,0.62)" : "rgba(99,102,241,0.54)";
+      bottom = isDark ? "rgba(236,72,153,0.28)" : "rgba(236,72,153,0.22)";
+    } else if (v <= 20){
+      top = isDark ? "rgba(251,191,36,0.62)" : "rgba(251,191,36,0.54)";
+      bottom = isDark ? "rgba(248,113,113,0.34)" : "rgba(248,113,113,0.26)";
+    } else {
+      top = isDark ? "rgba(239,68,68,0.72)" : "rgba(239,68,68,0.62)";
+      bottom = isDark ? "rgba(127,29,29,0.38)" : "rgba(127,29,29,0.28)";
+    }
+
+    const g = ctx.createLinearGradient(0, y, 0, y + Math.max(1, h));
+    g.addColorStop(0, top);
+    g.addColorStop(1, bottom);
+    return g;
+  }
+
+  function drawChartAnimated(data){
     const c = $("chart");
     if (!c || !c.getContext) return;
     const ctx = c.getContext("2d");
     const w = c.width, h = c.height;
-    ctx.clearRect(0,0,w,h);
 
-    ctx.fillStyle = "rgba(15,23,42,0.03)";
-    roundRect(ctx, 0, 0, w, h, 18);
-    ctx.fill();
-
-    const data = puffsLast7Days();
-    const max = Math.max(1, ...data);
+    const isDark = tg ? (tg.colorScheme === "dark") : false;
     const pad = 22;
     const innerW = w - pad*2;
     const innerH = h - pad*2;
-
-    ctx.strokeStyle = "rgba(15,23,42,0.10)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(pad, pad + innerH);
-    ctx.lineTo(pad + innerW, pad + innerH);
-    ctx.stroke();
-
     const gap = 10;
     const barW = (innerW - gap*6) / 7;
 
-    for(let i=0;i<7;i++){
-      const v = data[i];
-      const bh = (v/max) * innerH;
-      const x = pad + i*(barW+gap);
-      const y = pad + innerH - bh;
+    const scaleMax = getScaleMax(data);
 
-      const g = ctx.createLinearGradient(0,y,0,y+bh);
-      g.addColorStop(0, "rgba(99,102,241,0.50)");
-      g.addColorStop(1, "rgba(236,72,153,0.24)");
-      ctx.fillStyle = g;
+    // целевые высоты
+    const target = data.map(v => (Math.max(0, v) / scaleMax) * innerH);
+    if (!lastChartHeights) lastChartHeights = target.map(() => 0);
 
-      roundRect(ctx, x, y, barW, bh, 10);
+    const start = lastChartHeights.slice();
+    const startTs = performance.now();
+    const dur = 320;
+
+    if (animRAF) cancelAnimationFrame(animRAF);
+
+    const cssTrack = getComputedStyle(document.documentElement).getPropertyValue("--chartTrack").trim() || "rgba(15,23,42,0.06)";
+    const cssAxis = getComputedStyle(document.documentElement).getPropertyValue("--chartAxis").trim() || "rgba(15,23,42,0.12)";
+
+    const frame = (t) => {
+      const k = Math.min(1, (t - startTs) / dur);
+      // easeOutCubic
+      const e = 1 - Math.pow(1 - k, 3);
+
+      ctx.clearRect(0,0,w,h);
+
+      // track
+      ctx.fillStyle = cssTrack;
+      roundRect(ctx, 0, 0, w, h, 18);
       ctx.fill();
-    }
+
+      // axis
+      ctx.strokeStyle = cssAxis;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad, pad + innerH);
+      ctx.lineTo(pad + innerW, pad + innerH);
+      ctx.stroke();
+
+      for (let i=0;i<7;i++){
+        const v = data[i];
+        const bh = start[i] + (target[i] - start[i]) * e;
+        const x = pad + i*(barW+gap);
+        const y = pad + innerH - bh;
+
+        // faint base pill even if 0
+        ctx.fillStyle = isDark ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.04)";
+        roundRect(ctx, x, pad + innerH - 6, barW, 6, 6);
+        ctx.fill();
+
+        if (bh > 0.8) {
+          ctx.fillStyle = barGradient(ctx, y, bh, v, isDark);
+          roundRect(ctx, x, y, barW, bh, 10);
+          ctx.fill();
+        }
+      }
+
+      if (k < 1) {
+        animRAF = requestAnimationFrame(frame);
+      } else {
+        lastChartHeights = target.slice();
+        animRAF = null;
+      }
+    };
+
+    animRAF = requestAnimationFrame(frame);
   }
 
   function render(){
@@ -594,7 +729,15 @@ document.addEventListener("DOMContentLoaded", () => {
     $("todayLine").textContent = `Сегодня: затяжек ${pt} • экономия ~ ${moneyFormat(saved, state.currency)}`;
     $("chartHint").textContent = `сегодня: ${pt}`;
 
-    drawChart();
+    // undo visibility
+    if (undoBtn) {
+      undoBtn.style.opacity = pt > 0 ? "1" : ".35";
+      undoBtn.disabled = pt <= 0;
+    }
+
+    const data = puffsLast7Days();
+    drawChartAnimated(data);
+
     save();
   }
 
@@ -621,34 +764,6 @@ document.addEventListener("DOMContentLoaded", () => {
     render();
   });
 
-  $("btnPick").addEventListener("click", () => {
-    clearErr();
-    haptic("light");
-    const raw = prompt("Введи дату/время (например 2026-02-05 12:30) или ISO:");
-    if (!raw) return;
-
-    const try1 = new Date(raw);
-    if (!Number.isNaN(try1.getTime())) {
-      state.quit_at = try1.toISOString();
-      save();
-      setStatus("время обновлено");
-      render();
-      return;
-    }
-
-    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/);
-    if (m) {
-      const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), Number(m[4]), Number(m[5]), 0);
-      state.quit_at = d.toISOString();
-      save();
-      setStatus("время обновлено");
-      render();
-      return;
-    }
-
-    alert("Не понял формат. Пример: 2026-02-05 12:30");
-  });
-
   $("btnSaveSettings").addEventListener("click", () => {
     clearErr();
     haptic("light");
@@ -662,12 +777,35 @@ document.addEventListener("DOMContentLoaded", () => {
   $("btnPuff").addEventListener("click", () => {
     clearErr();
     haptic("light");
+
     state.puffs = state.puffs || [];
     state.puffs.push({ t: new Date().toISOString() });
+
     save();
     setStatus("затяжка записана");
     render();
   });
+
+  // Undo last puff (today only)
+  if (undoBtn) {
+    undoBtn.addEventListener("click", () => {
+      clearErr();
+      if (!state.puffs || state.puffs.length === 0) return;
+
+      const tk = dayKey(new Date());
+      // найдём последнюю затяжку "сегодня"
+      for (let i = state.puffs.length - 1; i >= 0; i--){
+        if (dayKey(new Date(state.puffs[i].t)) === tk) {
+          haptic("medium");
+          state.puffs.splice(i, 1);
+          save();
+          setStatus("последняя затяжка отменена");
+          render();
+          return;
+        }
+      }
+    });
+  }
 
   $("btnSlip").addEventListener("click", () => {
     clearErr();
