@@ -3,36 +3,71 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Calm Puffless — Offline</title>
+  <title>Puffless</title>
   <meta name="theme-color" content="#f6f7fb" />
+
+  <!-- Telegram Mini Apps SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <style>
     :root{
       --bg:#f6f7fb;
       --txt:#0f172a;
       --muted:#64748b;
-      --card: rgba(255,255,255,.68);
       --stroke: rgba(15,23,42,.10);
       --shadow: 0 18px 55px rgba(15,23,42,.10);
       --r: 24px;
-      --ok: rgba(34,197,94,.18);
-      --warn: rgba(248,113,113,.18);
       --accent: rgba(99,102,241,.20);
       --accent2: rgba(236,72,153,.14);
+
+      /* будет обновляться из TG */
+      --tg-vh: 100vh;
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
+
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
       color:var(--txt);
+
+      /* ВАЖНО: Telegram WebView иногда даёт кривую высоту -> используем переменную */
+      min-height: var(--tg-vh);
+      height: var(--tg-vh);
+
       background:
         radial-gradient(900px 520px at 15% 0%, var(--accent), transparent 55%),
         radial-gradient(760px 520px at 85% 10%, var(--accent2), transparent 55%),
         radial-gradient(700px 520px at 50% 100%, rgba(34,197,94,.10), transparent 60%),
         linear-gradient(180deg, var(--bg), #f3f6ff);
+
       overflow-x:hidden;
+      overflow-y:auto;
+
+      /* safe areas */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
-    .wrap{max-width: 980px; margin: 0 auto; padding: 18px 16px 34px;}
+
+    /* убираем синий highlight/фокус */
+    button, .x{
+      -webkit-tap-highlight-color: transparent;
+      tap-highlight-color: transparent;
+      outline: none;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    button:focus{ outline:none; }
+    input, select{ user-select:text; -webkit-user-select:text; }
+
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px 16px 34px;
+      min-height: var(--tg-vh);
+    }
+
     header{display:flex; justify-content:space-between; align-items:center; gap:12px; padding: 6px 2px 14px;}
     .brand .t1{font-weight:850; letter-spacing:-.3px; font-size:18px;}
     .brand .t2{font-size:12px; color:var(--muted); margin-top:3px;}
@@ -43,6 +78,7 @@
       box-shadow: 0 10px 30px rgba(15,23,42,.06);
       font-size:12px; color:var(--muted);
       user-select:none;
+      white-space:nowrap;
     }
 
     .grid{display:grid; grid-template-columns: 1.35fr .85fr; gap:14px;}
@@ -68,14 +104,11 @@
       opacity:.55;
       pointer-events:none;
     }
+
     .card{padding:16px}
     .title{font-size:12px; color:var(--muted); margin-bottom:10px}
-    .big{
-      font-size:44px;
-      letter-spacing:-1px;
-      font-weight:900;
-      line-height:1.05;
-    }
+    .big{font-size:44px; letter-spacing:-1px; font-weight:900; line-height:1.05;}
+
     .sub{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; color:var(--muted); font-size:13px;}
     .chip{
       padding:8px 10px;
@@ -105,9 +138,7 @@
     button.warn{
       background: linear-gradient(135deg, rgba(248,113,113,.18), rgba(251,191,36,.10));
     }
-    button.ghost{
-      background: rgba(255,255,255,.74);
-    }
+    button.ghost{ background: rgba(255,255,255,.74); }
 
     .kpis{display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-top:12px;}
     .kpi{
@@ -136,73 +167,40 @@
     .status{margin-top:10px; font-size:12px; color:var(--muted); line-height:1.35}
     .status b{color:var(--txt)}
 
-    /* Bottom sheet */
-    .sheetBack{
-      position:fixed; inset:0;
-      background: rgba(15,23,42,.25);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
+    .chartBox{
+      margin-top: 12px;
       padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.72);
+      border:1px solid var(--stroke);
+      box-shadow: 0 10px 24px rgba(15,23,42,.05);
     }
-    .sheet{
-      width:min(720px, 100%);
-      border-radius: 26px;
-      background: rgba(255,255,255,.86);
-      border: 1px solid rgba(15,23,42,.10);
-      box-shadow: 0 28px 80px rgba(15,23,42,.18);
-      padding: 14px;
-      transform: translateY(8px);
-    }
-    .sheetTop{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin-bottom: 8px;
-    }
-    .grab{
-      width: 52px; height: 5px; border-radius:999px;
-      background: rgba(15,23,42,.10);
-      margin: 0 auto 10px;
-    }
-    .sheetTitle{font-weight:900; letter-spacing:-.2px}
-    .x{
-      border-radius: 12px;
-      padding: 10px 12px;
-      background: rgba(255,255,255,.75);
-      border: 1px solid rgba(15,23,42,.10);
-      box-shadow: 0 10px 24px rgba(15,23,42,.06);
-      cursor:pointer;
-      font-weight:900;
-    }
+    .chartTop{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom: 8px;}
+    .chartTop .l{font-size:12px; color:var(--muted)}
+    .chartTop .r{font-size:12px; color:var(--muted)}
+    canvas{width:100%; height:120px; display:block;}
 
-    /* Breathing ring */
-    .ringWrap{display:grid; place-items:center; padding: 10px 6px 4px;}
-    .ring{
-      width: 180px; height: 180px;
-      border-radius: 999px;
-      background:
-        radial-gradient(circle at 30% 25%, rgba(255,255,255,.95), rgba(255,255,255,.65) 48%, rgba(255,255,255,.30) 70%, rgba(255,255,255,0) 72%),
-        radial-gradient(circle at 70% 70%, rgba(99,102,241,.22), transparent 60%),
-        radial-gradient(circle at 35% 75%, rgba(236,72,153,.16), transparent 58%),
-        linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.35));
-      border: 1px solid rgba(15,23,42,.10);
-      box-shadow: 0 20px 60px rgba(15,23,42,.12);
-      display:grid; place-items:center;
-      transform: scale(.92);
-      transition: transform 3.8s ease-in-out;
-    }
-    .ring.inhale{ transform: scale(1.02); }
-    .ring.exhale{ transform: scale(.90); }
-    .ringText{
-      text-align:center;
-      user-select:none;
-    }
-    .ringText .phase{font-weight:950; font-size:16px}
-    .ringText .sec{margin-top:4px; color:var(--muted); font-weight:750}
-    .sheetNote{
-      margin-top: 10px;
+    .errBox{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(248,113,113,.12);
+      border: 1px solid rgba(248,113,113,.28);
+      color:#7f1d1d;
       font-size:12px;
-      color: var(--muted);
-      line-height:1.45;
+      line-height:1.35;
+      display:none;
+      white-space:pre-wrap;
+    }
+    .noteBox{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(99,102,241,.10);
+      border: 1px solid rgba(99,102,241,.18);
+      color:#1e293b;
+      font-size:12px;
+      line-height:1.35;
     }
   </style>
 </head>
@@ -211,8 +209,8 @@
   <div class="wrap">
     <header>
       <div class="brand">
-        <div class="t1">Calm Puffless</div>
-        <div class="t2">офлайн • мягко • минималистично</div>
+        <div class="t1">Puffless</div>
+        <div class="t2">Telegram mini app • мягко • минималистично</div>
       </div>
       <div class="pill" id="who">offline</div>
     </header>
@@ -228,24 +226,31 @@
         </div>
 
         <div class="row">
-          <button class="primary" id="btnNow">Начать сейчас</button>
-          <button class="ghost" id="btnPick">Указать время</button>
-          <button class="warn" id="btnSlip">Срыв</button>
-          <button class="ghost" id="btnUrge">Тянет</button>
+          <button class="primary" id="btnNow" type="button">Начать сейчас</button>
+          <button class="ghost" id="btnPick" type="button">Указать время</button>
+          <button class="warn" id="btnSlip" type="button">Срыв</button>
+          <button class="ghost" id="btnPuff" type="button">Затяжка</button>
+        </div>
+
+        <div class="chartBox">
+          <div class="chartTop">
+            <div class="l">Затяжки за 7 дней</div>
+            <div class="r" id="chartHint">сегодня: 0</div>
+          </div>
+          <canvas id="chart" width="600" height="240"></canvas>
         </div>
 
         <div class="status" id="status">Статус: <b>готово</b></div>
-        <div class="mini">
-          Всё сохраняется в браузере (localStorage). Завтра перенесём на сервер и будет синхронизация между устройствами.
-        </div>
+        <div class="errBox" id="err"></div>
+        <div class="noteBox" id="storageNote">Сохранение: проверка…</div>
       </section>
 
       <aside class="glass card">
         <div class="title">Аналитика</div>
         <div class="kpis">
           <div class="kpi">
-            <div class="v" id="kpiUrges">0</div>
-            <div class="l">тянуло сегодня</div>
+            <div class="v" id="kpiPuffs">0</div>
+            <div class="l">затяжек сегодня</div>
           </div>
           <div class="kpi">
             <div class="v" id="kpiSlips">0</div>
@@ -268,7 +273,7 @@
               <option value="GBP">GBP</option>
             </select>
           </div>
-          <button id="btnSaveSettings">Сохранить</button>
+          <button id="btnSaveSettings" type="button">Сохранить</button>
         </div>
 
         <div class="mini" id="todayLine">Сегодня: —</div>
@@ -276,71 +281,101 @@
     </div>
   </div>
 
-  <!-- Anti-urge sheet -->
-  <div class="sheetBack" id="sheetBack">
-    <div class="sheet" role="dialog" aria-modal="true">
-      <div class="grab"></div>
-      <div class="sheetTop">
-        <div class="sheetTitle">Переждать “волну” (2 минуты)</div>
-        <div class="x" id="sheetClose">✕</div>
-      </div>
-
-      <div class="ringWrap">
-        <div class="ring inhale" id="ring">
-          <div class="ringText">
-            <div class="phase" id="phase">Вдох</div>
-            <div class="sec" id="phaseSec">4 сек</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="btnStartBreath">Старт</button>
-        <button class="ghost" id="btnLogUrge">Записать “тянет”</button>
-      </div>
-
-      <div class="sheetNote">
-        Подсказка: оцени тягу (1–10), сделай 3 цикла дыхания, выпей воды, переключись на 60 секунд.
-      </div>
-    </div>
-  </div>
-
 <script>
-(() => {
+document.addEventListener("DOMContentLoaded", () => {
   const KEY = "calm_puffless_v1";
-
   const $ = (id) => document.getElementById(id);
 
-  const state = load() || {
-    quit_at: null,                 // ISO
-    streak_best_seconds: 0,
-    cost_per_day: 0,
-    currency: "EUR",
-    slips_total: 0,
-    urges: [],                     // [{t:iso, intensity:number}]
-    slips: [],                     // [{t:iso, note:string}]
-    last_open_day: dayKey(new Date())
+  const who = $("who");
+  const errEl = $("err");
+  const noteEl = $("storageNote");
+
+  function showErr(msg){
+    if (!errEl) return;
+    errEl.style.display = "block";
+    errEl.textContent = msg;
+  }
+  function clearErr(){
+    if (!errEl) return;
+    errEl.style.display = "none";
+    errEl.textContent = "";
+  }
+  window.onerror = (m, src, line, col) => {
+    showErr(`Ошибка JS: ${m}\n${src || ""}:${line || ""}:${col || ""}`);
   };
 
-  // migrate daily counters (reset urges today)
-  const todayK = dayKey(new Date());
-  if (state.last_open_day !== todayK) {
-    state.last_open_day = todayK;
-    // ничего не удаляем, просто дневные показатели считаем фильтром по дате
-    save();
-  }
+  // --- Telegram integration (viewport + theme + haptics) ---
+  const tg = (window.Telegram && Telegram.WebApp) ? Telegram.WebApp : null;
 
-  $("costPerDay").value = state.cost_per_day || "";
-  $("currency").value = state.currency;
-
-  function save(){
-    localStorage.setItem(KEY, JSON.stringify(state));
-  }
-  function load(){
+  function hexToRgba(hex, a){
     try{
-      const raw = localStorage.getItem(KEY);
-      return raw ? JSON.parse(raw) : null;
-    }catch{ return null; }
+      const h = String(hex||"").replace("#","").trim();
+      const r = parseInt(h.length===3 ? h[0]+h[0] : h.slice(0,2), 16);
+      const g = parseInt(h.length===3 ? h[1]+h[1] : h.slice(2,4), 16);
+      const b = parseInt(h.length===3 ? h[2]+h[2] : h.slice(4,6), 16);
+      if ([r,g,b].some(n => Number.isNaN(n))) throw 0;
+      return `rgba(${r},${g},${b},${a})`;
+    }catch{
+      return `rgba(99,102,241,${a})`;
+    }
+  }
+
+  function syncViewport(){
+    const h = tg ? tg.viewportHeight : window.innerHeight;
+    document.documentElement.style.setProperty("--tg-vh", `${h}px`);
+  }
+
+  function applyTelegramTheme(){
+    if (!tg) return;
+    const tp = tg.themeParams || {};
+    const bg = tp.bg_color || "#f6f7fb";
+    const text = tp.text_color || "#0f172a";
+    const hint = tp.hint_color || "#64748b";
+    const btn = tp.button_color || "#6366f1";
+
+    const root = document.documentElement.style;
+    root.setProperty("--bg", bg);
+    root.setProperty("--txt", text);
+    root.setProperty("--muted", hint);
+    root.setProperty("--stroke", "rgba(15,23,42,.10)");
+    root.setProperty("--accent", hexToRgba(btn, 0.18));
+    root.setProperty("--accent2", hexToRgba("#ec4899", 0.12));
+
+    // Telegram UI chrome
+    try { tg.setHeaderColor("bg_color"); } catch {}
+    try { tg.setBackgroundColor(bg); } catch {}
+  }
+
+  function haptic(kind="light"){
+    if (!tg || !tg.HapticFeedback) return;
+    try { tg.HapticFeedback.impactOccurred(kind); } catch {}
+  }
+
+  if (tg){
+    tg.ready();
+    tg.expand();
+    syncViewport();
+    applyTelegramTheme();
+    tg.onEvent("viewportChanged", syncViewport);
+    tg.onEvent("themeChanged", applyTelegramTheme);
+  } else {
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+  }
+
+  if (who) who.textContent = tg ? "tg ok" : "js ok";
+
+  // --- Safe storage ---
+  const mem = new Map();
+  let storageOk = true;
+
+  function safeGet(k){
+    try { return localStorage.getItem(k); }
+    catch(e){ storageOk = false; return mem.get(k) ?? null; }
+  }
+  function safeSet(k, v){
+    try { localStorage.setItem(k, v); }
+    catch(e){ storageOk = false; mem.set(k, v); }
   }
 
   function dayKey(d){
@@ -349,6 +384,47 @@
     const da = String(d.getDate()).padStart(2,"0");
     return `${y}-${m}-${da}`;
   }
+
+  function load(){
+    try{
+      const raw = safeGet(KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){
+      storageOk = false;
+      showErr("Не удалось прочитать сохранение: " + (e.message || e));
+      return null;
+    }
+  }
+
+  const state = load() || {
+    quit_at: null,
+    streak_best_seconds: 0,
+    cost_per_day: 0,
+    currency: "EUR",
+    slips_total: 0,
+    puffs: [],
+    slips: [],
+    last_open_day: dayKey(new Date())
+  };
+
+  function save(){
+    safeSet(KEY, JSON.stringify(state));
+    if (noteEl){
+      noteEl.textContent = storageOk
+        ? "Сохранение: OK"
+        : "Сохранение: недоступно (временно)";
+    }
+  }
+
+  // daily marker
+  const todayK = dayKey(new Date());
+  if (state.last_open_day !== todayK) {
+    state.last_open_day = todayK;
+    save();
+  }
+
+  $("costPerDay").value = state.cost_per_day || "";
+  $("currency").value = state.currency || "EUR";
 
   function fmtDuration(seconds) {
     seconds = Math.max(0, Math.floor(seconds));
@@ -380,45 +456,112 @@
     $("status").innerHTML = `Статус: <b>${text}</b>`;
   }
 
-  function urgesToday(){
+  function puffsToday(){
     const tk = dayKey(new Date());
-    return (state.urges||[]).filter(x => dayKey(new Date(x.t)) === tk).length;
+    return (state.puffs||[]).filter(x => dayKey(new Date(x.t)) === tk).length;
+  }
+
+  function puffsLast7Days(){
+    const out = [];
+    const now = new Date();
+    for (let i=6;i>=0;i--){
+      const d = new Date(now);
+      d.setDate(now.getDate()-i);
+      const k = dayKey(d);
+      const c = (state.puffs||[]).filter(x => dayKey(new Date(x.t)) === k).length;
+      out.push(c);
+    }
+    return out;
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y, x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x, y+h, rr);
+    ctx.arcTo(x, y+h, x, y, rr);
+    ctx.arcTo(x, y, x+w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawChart(){
+    const c = $("chart");
+    if (!c || !c.getContext) return;
+    const ctx = c.getContext("2d");
+    const w = c.width, h = c.height;
+    ctx.clearRect(0,0,w,h);
+
+    ctx.fillStyle = "rgba(15,23,42,0.03)";
+    roundRect(ctx, 0, 0, w, h, 18);
+    ctx.fill();
+
+    const data = puffsLast7Days();
+    const max = Math.max(1, ...data);
+    const pad = 22;
+    const innerW = w - pad*2;
+    const innerH = h - pad*2;
+
+    ctx.strokeStyle = "rgba(15,23,42,0.10)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad, pad + innerH);
+    ctx.lineTo(pad + innerW, pad + innerH);
+    ctx.stroke();
+
+    const gap = 10;
+    const barW = (innerW - gap*6) / 7;
+
+    for(let i=0;i<7;i++){
+      const v = data[i];
+      const bh = (v/max) * innerH;
+      const x = pad + i*(barW+gap);
+      const y = pad + innerH - bh;
+
+      const g = ctx.createLinearGradient(0,y,0,y+bh);
+      g.addColorStop(0, "rgba(99,102,241,0.50)");
+      g.addColorStop(1, "rgba(236,72,153,0.24)");
+      ctx.fillStyle = g;
+
+      roundRect(ctx, x, y, barW, bh, 10);
+      ctx.fill();
+    }
   }
 
   function render(){
-    // timer
     if (!state.quit_at) $("timer").textContent = "00:00:00";
-    // best
     $("best").textContent = fmtDuration(state.streak_best_seconds || 0);
-    // saved
     $("saved").textContent = moneyFormat(moneySaved(), state.currency);
 
-    // KPIs
-    $("kpiUrges").textContent = String(urgesToday());
+    const pt = puffsToday();
+    $("kpiPuffs").textContent = String(pt);
     $("kpiSlips").textContent = String(state.slips_total || 0);
 
-    // today line
     const saved = moneySaved();
-    $("todayLine").textContent =
-      `Сегодня: тяга ${urgesToday()} • экономия ~ ${moneyFormat(saved, state.currency)}`;
+    $("todayLine").textContent = `Сегодня: затяжек ${pt} • экономия ~ ${moneyFormat(saved, state.currency)}`;
+    $("chartHint").textContent = `сегодня: ${pt}`;
+
+    drawChart();
+    save();
   }
 
   function tick(){
     if (!state.quit_at) return;
     const sec = Math.max(0, Math.floor((Date.now() - Date.parse(state.quit_at)) / 1000));
     $("timer").textContent = fmtDuration(sec);
-    // best streak update
+
     if (sec > (state.streak_best_seconds||0)) {
       state.streak_best_seconds = sec;
       save();
       $("best").textContent = fmtDuration(state.streak_best_seconds);
     }
-    // savings update
     $("saved").textContent = moneyFormat(moneySaved(), state.currency);
   }
 
-  // Actions
+  // handlers
   $("btnNow").addEventListener("click", () => {
+    clearErr();
+    haptic("light");
     state.quit_at = new Date().toISOString();
     save();
     setStatus("старт установлен");
@@ -426,7 +569,8 @@
   });
 
   $("btnPick").addEventListener("click", () => {
-    // мобильный-friendly: просим ISO или "YYYY-MM-DD HH:mm"
+    clearErr();
+    haptic("light");
     const raw = prompt("Введи дату/время (например 2026-02-05 12:30) или ISO:");
     if (!raw) return;
 
@@ -439,7 +583,6 @@
       return;
     }
 
-    // попытка парсинга "YYYY-MM-DD HH:mm"
     const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/);
     if (m) {
       const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), Number(m[4]), Number(m[5]), 0);
@@ -454,6 +597,8 @@
   });
 
   $("btnSaveSettings").addEventListener("click", () => {
+    clearErr();
+    haptic("light");
     state.cost_per_day = Number($("costPerDay").value || 0);
     state.currency = $("currency").value || "EUR";
     save();
@@ -461,16 +606,23 @@
     render();
   });
 
-  $("btnUrge").addEventListener("click", () => {
-    openSheet();
+  $("btnPuff").addEventListener("click", () => {
+    clearErr();
+    haptic("light");
+    state.puffs = state.puffs || [];
+    state.puffs.push({ t: new Date().toISOString() });
+    save();
+    setStatus("затяжка записана");
+    render();
   });
 
   $("btnSlip").addEventListener("click", () => {
-    const note = prompt("Коротко: что случилось? (триггер/ситуация)", "стресс / компания / кофе") || "";
+    clearErr();
+    haptic("medium");
+    const note = prompt("Причина срыва", "") || "";
     state.slips_total = Number(state.slips_total||0) + 1;
     state.slips = state.slips || [];
     state.slips.push({ t: new Date().toISOString(), note: note.slice(0, 200) });
-    save();
 
     const reset = confirm("Сбросить таймер (последний раз = сейчас)?");
     if (reset) state.quit_at = new Date().toISOString();
@@ -480,83 +632,10 @@
     render();
   });
 
-  // Sheet + breathing
-  const sheetBack = $("sheetBack");
-  const ring = $("ring");
-  const phase = $("phase");
-  const phaseSec = $("phaseSec");
-
-  function openSheet(){
-    sheetBack.style.display = "flex";
-  }
-  function closeSheet(){
-    sheetBack.style.display = "none";
-    stopBreath();
-  }
-  $("sheetClose").addEventListener("click", closeSheet);
-  sheetBack.addEventListener("click", (e) => {
-    if (e.target === sheetBack) closeSheet();
-  });
-
-  let breathTimer = null;
-  let step = 0; // 0 inhale, 1 hold, 2 exhale, 3 hold
-  let secLeft = 0;
-  const pattern = [
-    { name:"Вдох", sec:4, cls:"inhale" },
-    { name:"Задержка", sec:2, cls:"inhale" },
-    { name:"Выдох", sec:6, cls:"exhale" },
-    { name:"Пауза", sec:2, cls:"exhale" },
-  ];
-
-  function applyStep(){
-    const p = pattern[step];
-    phase.textContent = p.name;
-    secLeft = p.sec;
-    phaseSec.textContent = `${secLeft} сек`;
-    ring.classList.remove("inhale","exhale");
-    ring.classList.add(p.cls);
-  }
-
-  function stopBreath(){
-    if (breathTimer) clearInterval(breathTimer);
-    breathTimer = null;
-    step = 0;
-    applyStep();
-  }
-
-  function startBreath(){
-    stopBreath();
-    applyStep();
-    breathTimer = setInterval(() => {
-      secLeft -= 1;
-      if (secLeft <= 0) {
-        step = (step + 1) % pattern.length;
-        applyStep();
-      } else {
-        phaseSec.textContent = `${secLeft} сек`;
-      }
-    }, 1000);
-  }
-
-  $("btnStartBreath").addEventListener("click", () => {
-    startBreath();
-  });
-
-  $("btnLogUrge").addEventListener("click", () => {
-    const intensity = Number(prompt("Насколько сильно тянет (1–10)?", "6") || "6");
-    const val = Math.max(1, Math.min(10, intensity || 6));
-    state.urges = state.urges || [];
-    state.urges.push({ t: new Date().toISOString(), intensity: val });
-    save();
-    setStatus("записано (ты справишься)");
-    render();
-  });
-
-  // First render
+  // init
   render();
   setInterval(tick, 250);
-
-})();
+});
 </script>
 </body>
 </html>
