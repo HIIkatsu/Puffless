@@ -1,0 +1,1191 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Puffless</title>
+  <meta name="theme-color" content="#f6f7fb" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    :root{
+      --tg-vh: 100vh;
+
+      --bg:#f6f7fb;
+      --txt:#0f172a;
+      --muted:#64748b;
+
+      --panel: rgba(255,255,255,.86);
+      --panel2: rgba(255,255,255,.78);
+      --border: rgba(15,23,42,.10);
+      --shadow: 0 18px 55px rgba(15,23,42,.10);
+
+      --btn: rgba(255,255,255,.82);
+      --btnBorder: rgba(15,23,42,.10);
+
+      --accent: rgba(99,102,241,.22);
+      --accent2: rgba(236,72,153,.14);
+
+      --axis: rgba(15,23,42,.12);
+      --track: rgba(15,23,42,.06);
+
+      --r: 22px;
+      --blur: 14px;
+
+      --modalDim: rgba(0,0,0,.55);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+      color:var(--txt);
+      min-height: var(--tg-vh);
+      height: var(--tg-vh);
+      overflow:hidden;
+      overscroll-behavior: none;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      background:
+        radial-gradient(900px 520px at 15% 0%, var(--accent), transparent 58%),
+        radial-gradient(760px 520px at 85% 10%, var(--accent2), transparent 58%),
+        linear-gradient(180deg, var(--bg), #f3f6ff);
+    }
+
+    button, .miniBtn{
+      -webkit-tap-highlight-color: transparent;
+      tap-highlight-color: transparent;
+      outline:none;
+      user-select:none; -webkit-user-select:none;
+    }
+    button:focus{ outline:none; }
+    input, select{ user-select:text; -webkit-user-select:text; }
+
+    body, .panel, .pill, .chip, .kpi, .chartBox, button, input, select, .toast, .sheet, .sheetBack{
+      transition: background-color .28s ease, color .28s ease, border-color .28s ease, box-shadow .28s ease, filter .22s ease, transform .12s ease, opacity .22s ease;
+    }
+
+    .wrap{max-width:980px; margin:0 auto; padding:16px 16px 0; height:var(--tg-vh); display:flex; flex-direction:column;}
+    header{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:6px 2px 10px; flex:0 0 auto;}
+    .brand .t1{font-weight:900; letter-spacing:-.4px; font-size:18px;}
+    .brand .t2{font-size:12px; color:var(--muted); margin-top:3px;}
+    .rightHead{display:flex; align-items:center; gap:10px;}
+    .pill{
+      padding:10px 12px; border-radius:999px;
+      background: var(--panel2);
+      border:1px solid var(--border);
+      box-shadow: 0 10px 24px rgba(0,0,0,.06);
+      font-size:12px; color:var(--muted);
+      white-space:nowrap;
+    }
+    .miniBtn{
+      border:1px solid var(--border);
+      background: var(--btn);
+      padding: 8px 10px;
+      border-radius: 14px;
+      font-weight:950;
+      cursor:pointer;
+      line-height:1;
+      box-shadow: 0 8px 18px rgba(0,0,0,.08);
+    }
+    .miniBtn:active{ transform: scale(.98); }
+
+    .pager{
+      position:relative;
+      flex: 1 1 auto;
+      min-height:0;
+      overflow:hidden;
+      border-radius: 18px;
+      overscroll-behavior: none;
+      touch-action: pan-y;
+    }
+
+    .pages{
+      height:100%;
+      display:flex;
+      width:200%;
+      transform: translateX(0%);
+      will-change: transform;
+      transition: transform .26s cubic-bezier(.22,.8,.18,1);
+    }
+
+    .page{ width:100%; height:100%; overflow:hidden; }
+    .scroller{
+      height:100%;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding-bottom: 22px;
+      scrollbar-width: none;
+      overflow-x:hidden;
+    }
+    .scroller::-webkit-scrollbar{ display:none; }
+
+    .dotsWrap{
+      flex: 0 0 auto;
+      padding: 10px 0 14px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(100,116,139,.35);
+      border: 1px solid rgba(100,116,139,.18);
+      cursor:pointer;
+    }
+    .dot.active{
+      width:22px;
+      background: rgba(99,102,241,.55);
+      border-color: rgba(99,102,241,.18);
+    }
+
+    .panel{
+      background: var(--panel);
+      border:1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(var(--blur)) saturate(1.1);
+      -webkit-backdrop-filter: blur(var(--blur)) saturate(1.1);
+      overflow:hidden;
+      position:relative;
+    }
+    .card{padding:16px}
+    .title{font-size:12px; color:var(--muted); margin-bottom:10px; font-weight:650}
+    .big{font-size:44px; letter-spacing:-1px; font-weight:950; line-height:1.05;}
+    .sub{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; color:var(--muted); font-size:13px;}
+    .chip{
+      padding:8px 10px;
+      border-radius:999px;
+      background: var(--panel2);
+      border:1px solid var(--border);
+    }
+
+    .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+    button{
+      border:1px solid var(--btnBorder);
+      background: var(--btn);
+      color: var(--txt);
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow: 0 10px 24px rgba(0,0,0,.06);
+    }
+    button:active{ transform: scale(.985); filter: brightness(.98); }
+    button.primary{
+      background: linear-gradient(135deg, rgba(99,102,241,.30), rgba(236,72,153,.18));
+      border-color: rgba(99,102,241,.20);
+      box-shadow: 0 16px 38px rgba(0,0,0,.12);
+    }
+    button.warn{
+      background: linear-gradient(135deg, rgba(251,191,36,.18), rgba(239,68,68,.18));
+      border-color: rgba(239,68,68,.18);
+    }
+
+    .chartBox{
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 18px;
+      background: var(--panel2);
+      border:1px solid var(--border);
+      box-shadow: 0 10px 22px rgba(0,0,0,.05);
+    }
+    .chartTop{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;}
+    .chartTop .l{font-size:12px; color:var(--muted); font-weight:750}
+    .chartTop .r{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);}
+    canvas{width:100%; height:120px; display:block; border-radius: 14px;}
+
+    .goalBox{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: var(--panel);
+      border:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .goalLeft{display:flex; flex-direction:column; gap:2px;}
+    .goalTitle{font-size:12px; color:var(--muted); font-weight:750}
+    .goalValue{font-size:14px; font-weight:950}
+    .goalBar{
+      width: 140px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--track);
+      border:1px solid var(--border);
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+    .goalFill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background: rgba(99,102,241,.55);
+      transition: width .22s ease, background-color .22s ease;
+    }
+
+    .gridHome{display:grid; grid-template-columns:1.35fr .85fr; gap:14px;}
+    @media (max-width:860px){ .gridHome{grid-template-columns:1fr} }
+
+    .anaGrid{display:grid; grid-template-columns: 1fr; gap:14px; padding: 0 0 6px;}
+    .anaKpis{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
+    @media (min-width: 760px){ .anaKpis{grid-template-columns:repeat(4,1fr);} }
+
+    .kpi{
+      padding:14px; border-radius: 18px;
+      background: var(--panel2);
+      border:1px solid var(--border);
+      box-shadow: 0 10px 22px rgba(0,0,0,.05);
+    }
+    .kpi .v{font-size:20px; font-weight:950}
+    .kpi .l{font-size:12px; color:var(--muted); margin-top:4px}
+
+    .list{
+      margin-top: 10px;
+      border-radius: 18px;
+      overflow:hidden;
+      border: 1px solid var(--border);
+      background: var(--panel2);
+    }
+    .rowItem{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 10px 12px;
+      border-top: 1px solid rgba(15,23,42,.08);
+      font-size: 13px;
+      color: var(--txt);
+    }
+    .rowItem:first-child{border-top:none}
+    .rowItem .small{color:var(--muted); font-size:12px}
+    .badge{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.28);
+      font-weight: 950;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .errBox{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(239,68,68,.14);
+      border: 1px solid rgba(239,68,68,.22);
+      color:#7f1d1d;
+      font-size:12px;
+      line-height:1.35;
+      display:none;
+      white-space:pre-wrap;
+    }
+    .noteBox{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(99,102,241,.10);
+      border: 1px solid rgba(99,102,241,.18);
+      color:var(--txt);
+      font-size:12px;
+      line-height:1.35;
+    }
+
+    .toast{
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.18);
+      padding: 12px 12px;
+      display:none;
+      z-index: 9999;
+    }
+    .toastTop{display:flex; justify-content:space-between; align-items:center; gap:10px;}
+    .toastTitle{font-weight:950; letter-spacing:-.2px;}
+    .toastSmall{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.35}
+
+    /* FIX: модалка — делаем слой более "глухим" и без блюра, чтобы не просвечивало */
+    .sheetBack{
+      position: fixed; inset: 0;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      background: var(--modalDim);
+      padding: 12px;
+      z-index: 9998;
+      overscroll-behavior: none;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+
+    .sheet{
+      width: min(720px, 100%);
+      background: var(--panel);
+      border:1px solid var(--border);
+      border-radius: 26px;
+      box-shadow: 0 30px 90px rgba(0,0,0,.35);
+      padding: 14px;
+      transform: translateY(10px);
+      isolation:isolate;  /* FIX: отдельный слой */
+    }
+    .grab{width: 52px; height: 5px; border-radius:999px; background: rgba(100,116,139,.35); margin: 0 auto 10px;}
+    .sheetTop{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 10px;}
+    .sheetTitle{font-weight:950}
+    .xBtn{
+      border:1px solid var(--border);
+      background: var(--btn);
+      padding: 8px 10px;
+      border-radius: 14px;
+      font-weight: 950;
+      cursor:pointer;
+    }
+
+    .form{display:flex; flex-direction:column; gap:10px;}
+    label{font-size:12px; color:var(--muted); font-weight:750}
+    input, select{
+      width:100%;
+      background: var(--panel2);
+      border:1px solid var(--border);
+      border-radius: 16px;
+      color:var(--txt);
+      padding: 12px 12px;
+      outline:none;
+      font-weight:750;
+    }
+
+    .noGlass{
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter:none !important;
+    }
+
+    .pager, .pages, .page, .scroller, body{ overscroll-behavior-x: none; }
+
+    /* FIX: когда модалка открыта — блокируем любые клики/скролл фона */
+    body.modalOpen .wrap{ pointer-events:none; }
+    body.modalOpen .sheetBack{ pointer-events:auto; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="t1">Puffless</div>
+        <div class="t2">лимит в день • прогресс • неделя</div>
+      </div>
+      <div class="rightHead">
+        <button class="miniBtn" id="btnSettings" type="button">Настройки</button>
+        <div class="pill" id="who">online</div>
+      </div>
+    </header>
+
+    <div class="pager" id="pager">
+      <div class="pages" id="pages">
+        <div class="page" id="page0">
+          <div class="scroller" id="scroll0">
+            <div class="gridHome">
+              <section class="panel card" id="homeMain">
+                <div class="title">С момента последнего раза</div>
+                <div class="big" id="timer">00:00:00</div>
+
+                <div class="sub">
+                  <div class="chip">Рекорд: <b id="best">—</b></div>
+                  <div class="chip">Сэкономил: <b id="saved">—</b></div>
+                </div>
+
+                <div class="row">
+                  <button class="primary" id="btnNow" type="button">Начать сейчас</button>
+                  <button class="warn" id="btnSlip" type="button">Срыв</button>
+                  <button id="btnPuff" type="button">Затяжка</button>
+                </div>
+
+                <div class="chartBox">
+                  <div class="chartTop">
+                    <div class="l">Затяжки за 7 дней</div>
+                    <div class="r">
+                      <span id="chartHint">сегодня: 0</span>
+                      <button class="miniBtn" id="btnUndoPuff" type="button" title="Отменить последнюю">↩︎</button>
+                    </div>
+                  </div>
+                  <canvas id="chartHome" width="600" height="240"></canvas>
+
+                  <div class="goalBox">
+                    <div class="goalLeft">
+                      <div class="goalTitle">Лимит на день</div>
+                      <div class="goalValue" id="goalText">—</div>
+                    </div>
+                    <div class="goalBar">
+                      <div class="goalFill" id="goalFill"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="errBox" id="err"></div>
+                <div class="noteBox" id="storageNote">Сохранение: проверка…</div>
+              </section>
+
+              <aside class="panel card" id="homeSide">
+                <div class="title">Сегодня</div>
+                <div class="kpi">
+                  <div class="v" id="kpiPuffs">0</div>
+                  <div class="l">затяжек</div>
+                </div>
+
+                <div style="height:10px"></div>
+
+                <div class="kpi">
+                  <div class="v" id="kpiSlips">0</div>
+                  <div class="l">срывов всего</div>
+                </div>
+
+                <div class="title" style="margin-top:14px">Сводка</div>
+                <div class="list" id="homeSummary">
+                  <div class="rowItem">
+                    <div>
+                      <div style="font-weight:950">Экономия</div>
+                      <div class="small" id="todayLine">Сегодня: —</div>
+                    </div>
+                    <div class="badge" id="badgeLimit">лимит</div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+
+        <div class="page" id="page1">
+          <div class="scroller" id="scroll1">
+            <div class="anaGrid">
+              <section class="panel card" id="anaMain">
+                <div class="title">Аналитика</div>
+
+                <div class="anaKpis">
+                  <div class="kpi"><div class="v" id="a7Total">0</div><div class="l">за 7 дней</div></div>
+                  <div class="kpi"><div class="v" id="a7Avg">0</div><div class="l">в среднем / день</div></div>
+                  <div class="kpi"><div class="v" id="aBestDay">—</div><div class="l">лучший день</div></div>
+                  <div class="kpi"><div class="v" id="aInLimit">—</div><div class="l">дней в лимите</div></div>
+                </div>
+
+                <div class="chartBox" style="margin-top:14px">
+                  <div class="chartTop">
+                    <div class="l">Неделя (подробно)</div>
+                    <div class="r"><span id="anaHint">тап: день</span></div>
+                  </div>
+                  <canvas id="chartAna" width="600" height="260" style="height:140px"></canvas>
+                </div>
+
+                <div class="title" style="margin-top:14px">Срывы (последние)</div>
+                <div class="list" id="slipList"></div>
+
+                <div class="noteBox" style="margin-top:12px">Настройки открываются кнопкой сверху. Превышение лимита → авто-срыв и таймер сбросится.</div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="dotsWrap" aria-label="Индикатор страниц">
+      <div class="dot active" id="dot0" title="Главная"></div>
+      <div class="dot" id="dot1" title="Аналитика"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <div class="toastTop">
+      <div class="toastTitle" id="toastTitle">—</div>
+      <button class="miniBtn" id="toastClose" type="button">✕</button>
+    </div>
+    <div class="toastSmall" id="toastText">—</div>
+  </div>
+
+  <div class="sheetBack" id="sheetBack" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="grab"></div>
+      <div class="sheetTop">
+        <div class="sheetTitle">Настройки</div>
+        <button class="xBtn" id="sheetClose" type="button">✕</button>
+      </div>
+
+      <div class="form">
+        <div>
+          <label>Сколько тратил в день</label>
+          <input id="costPerDay" type="number" min="0" step="0.1" placeholder="например: 7.5" />
+        </div>
+
+        <div>
+          <label>Валюта</label>
+          <select id="currency">
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="RUB">RUB</option>
+            <option value="GBP">GBP</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Лимит затяжек в день (не больше)</label>
+          <input id="goalPerDay" type="number" min="1" step="1" placeholder="например: 20" />
+        </div>
+
+        <button class="primary" id="btnSaveSettings" type="button">Сохранить</button>
+      </div>
+
+      <div class="noteBox" style="margin-top:12px">Данные хранятся локально (localStorage).</div>
+    </div>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const KEY="calm_puffless_v1";
+  const $=id=>document.getElementById(id);
+
+  const pagesEl = $("pages");
+  const pagerEl = $("pager");
+  const dots = [ $("dot0"), $("dot1") ];
+
+  const errEl=$("err"), noteEl=$("storageNote");
+  const undoBtn=$("btnUndoPuff");
+  const toast=$("toast"), toastTitle=$("toastTitle"), toastText=$("toastText"), toastClose=$("toastClose");
+
+  const sheetBack=$("sheetBack");
+  const btnSettings=$("btnSettings");
+  const sheetClose=$("sheetClose");
+
+  const scrollers = [ $("scroll0"), $("scroll1") ];
+
+  function showErr(msg){ if(!errEl) return; errEl.style.display="block"; errEl.textContent=msg; }
+  function clearErr(){ if(!errEl) return; errEl.style.display="none"; errEl.textContent=""; }
+  window.onerror=(m,src,line,col)=>showErr(`Ошибка JS: ${m}\n${src||""}:${line||""}:${col||""}`);
+
+  const tg=(window.Telegram&&Telegram.WebApp)?Telegram.WebApp:null;
+
+  function hexToRgba(hex,a){
+    try{
+      const h=String(hex||"").replace("#","").trim();
+      const r=parseInt(h.length===3?h[0]+h[0]:h.slice(0,2),16);
+      const g=parseInt(h.length===3?h[1]+h[1]:h.slice(2,4),16);
+      const b=parseInt(h.length===3?h[2]+h[2]:h.slice(4,6),16);
+      if([r,g,b].some(n=>Number.isNaN(n))) throw 0;
+      return `rgba(${r},${g},${b},${a})`;
+    }catch{ return `rgba(99,102,241,${a})`; }
+  }
+
+  function syncViewport(){
+    const h=tg?tg.viewportHeight:window.innerHeight;
+    document.documentElement.style.setProperty("--tg-vh",`${h}px`);
+  }
+
+  function applyTelegramTheme(){
+    if(!tg) return;
+    const tp=tg.themeParams||{};
+    const isDark=tg.colorScheme==="dark";
+
+    const bg=tp.bg_color || (isDark?"#0a0f1a":"#f6f7fb");
+    const text=tp.text_color || (isDark?"#e5e7eb":"#0f172a");
+    const hint=tp.hint_color || (isDark?"#9aa4b2":"#64748b");
+    const btn=tp.button_color || "#6366f1";
+
+    const root=document.documentElement.style;
+    root.setProperty("--bg",bg);
+    root.setProperty("--txt",text);
+    root.setProperty("--muted",hint);
+
+    const panels = [ $("homeMain"), $("homeSide"), $("anaMain") ].filter(Boolean);
+
+    if(isDark){
+      root.setProperty("--accent", hexToRgba(btn, 0.10));
+      root.setProperty("--accent2", "rgba(0,0,0,0)");
+
+      root.setProperty("--blur","0px");
+      root.setProperty("--panel","#0f172a");
+      root.setProperty("--panel2","#111c33");
+      root.setProperty("--border","rgba(255,255,255,.10)");
+      root.setProperty("--shadow","0 22px 70px rgba(0,0,0,.55)");
+
+      root.setProperty("--btn","#121f3a");
+      root.setProperty("--btnBorder","rgba(255,255,255,.10)");
+
+      root.setProperty("--axis","rgba(255,255,255,.14)");
+      root.setProperty("--track","rgba(255,255,255,.07)");
+
+      root.setProperty("--modalDim","rgba(0,0,0,.70)");
+
+      document.body.style.background =
+        `radial-gradient(900px 520px at 15% 0%, var(--accent), transparent 65%),
+         linear-gradient(180deg, var(--bg), #05070d)`;
+
+      panels.forEach(p=>p.classList.add("noGlass"));
+    } else {
+      root.setProperty("--accent", hexToRgba(btn, 0.22));
+      root.setProperty("--accent2", "rgba(236,72,153,.14)");
+
+      root.setProperty("--blur","14px");
+      root.setProperty("--panel","rgba(255,255,255,.86)");
+      root.setProperty("--panel2","rgba(255,255,255,.78)");
+      root.setProperty("--border","rgba(15,23,42,.10)");
+      root.setProperty("--shadow","0 18px 55px rgba(15,23,42,.10)");
+
+      root.setProperty("--btn","rgba(255,255,255,.82)");
+      root.setProperty("--btnBorder","rgba(15,23,42,.10)");
+
+      root.setProperty("--axis","rgba(15,23,42,.12)");
+      root.setProperty("--track","rgba(15,23,42,.06)");
+
+      root.setProperty("--modalDim","rgba(0,0,0,.55)");
+
+      document.body.style.background =
+        `radial-gradient(900px 520px at 15% 0%, var(--accent), transparent 58%),
+         radial-gradient(760px 520px at 85% 10%, var(--accent2), transparent 58%),
+         linear-gradient(180deg, var(--bg), #f3f6ff)`;
+
+      panels.forEach(p=>p.classList.remove("noGlass"));
+    }
+
+    try{ tg.setHeaderColor("bg_color"); }catch{}
+    try{ tg.setBackgroundColor(bg); }catch{}
+  }
+
+  function haptic(kind="light"){
+    if(tg && tg.HapticFeedback){
+      try{ tg.HapticFeedback.impactOccurred(kind); return; }catch{}
+      try{ tg.HapticFeedback.notificationOccurred("success"); return; }catch{}
+    }
+    if(navigator.vibrate){
+      const ms = kind==="heavy"?35:kind==="medium"?22:12;
+      navigator.vibrate(ms);
+    }
+  }
+
+  if(tg){
+    tg.ready(); tg.expand();
+    syncViewport(); applyTelegramTheme();
+    tg.onEvent("viewportChanged", syncViewport);
+    tg.onEvent("themeChanged", () => { applyTelegramTheme(); drawAllCharts(true); });
+  }else{
+    syncViewport(); window.addEventListener("resize", syncViewport);
+  }
+
+  const mem=new Map(); let storageOk=true;
+  const safeGet=k=>{ try{return localStorage.getItem(k);}catch{storageOk=false; return mem.get(k)??null;} };
+  const safeSet=(k,v)=>{ try{localStorage.setItem(k,v);}catch{storageOk=false; mem.set(k,v);} };
+
+  function dayKey(d){
+    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), da=String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${da}`;
+  }
+  function load(){
+    try{ const raw=safeGet(KEY); return raw?JSON.parse(raw):null; }
+    catch(e){ storageOk=false; showErr("Не удалось прочитать сохранение: "+(e.message||e)); return null; }
+  }
+
+  const state = load() || {
+    quit_at:null,
+    streak_best_seconds:0,
+    cost_per_day:0,
+    currency:"EUR",
+    goal_per_day:20,
+
+    // FIX: авто-срыв должен срабатывать ровно на (limit+1) и только раз в день
+    auto_slip_day:null,
+    auto_slip_limit:null,
+
+    slips_total:0,
+    puffs:[],
+    slips:[],
+    last_open_day: dayKey(new Date())
+  };
+
+  function save(){
+    safeSet(KEY, JSON.stringify(state));
+    if(noteEl) noteEl.textContent = storageOk ? "Сохранение: OK" : "Сохранение: недоступно (временно)";
+  }
+
+  const todayK=dayKey(new Date());
+  if(state.last_open_day!==todayK){
+    state.last_open_day=todayK;
+    state.auto_slip_day=null;
+    state.auto_slip_limit=null;
+    save();
+  }
+
+  $("costPerDay").value = state.cost_per_day || "";
+  $("currency").value = state.currency || "EUR";
+  $("goalPerDay").value = state.goal_per_day || 20;
+
+  const fmtDuration=(sec)=>{
+    sec=Math.max(0,Math.floor(sec));
+    const d=Math.floor(sec/86400);
+    const h=Math.floor((sec%86400)/3600);
+    const m=Math.floor((sec%3600)/60);
+    const s=sec%60;
+    const hh=String(h).padStart(2,"0"), mm=String(m).padStart(2,"0"), ss=String(s).padStart(2,"0");
+    return d>0 ? `${d}д ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`;
+  };
+
+  function moneySaved(){
+    if(!state.quit_at) return 0;
+    const diff=Date.now()-Date.parse(state.quit_at);
+    if(diff<=0) return 0;
+    const days=diff/(1000*60*60*24);
+    return days*(Number(state.cost_per_day)||0);
+  }
+  function moneyFormat(amount,cur){
+    const n=Number(amount||0);
+    const fixed=n<100?n.toFixed(2):n.toFixed(0);
+    return `${fixed} ${cur}`;
+  }
+
+  const puffsToday=()=>{
+    const tk=dayKey(new Date());
+    return (state.puffs||[]).filter(x=>dayKey(new Date(x.t))===tk).length;
+  };
+
+  function puffsLast7Days(){
+    const out=[], now=new Date();
+    for(let i=6;i>=0;i--){
+      const d=new Date(now); d.setDate(now.getDate()-i);
+      const k=dayKey(d);
+      const c=(state.puffs||[]).filter(x=>dayKey(new Date(x.t))===k).length;
+      out.push({ key:k, date:d, count:c });
+    }
+    return out;
+  }
+
+  function roundRect(ctx,x,y,w,h,r){
+    const rr=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y,x+w,y+h,rr);
+    ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr);
+    ctx.arcTo(x,y,x+w,y,rr);
+    ctx.closePath();
+  }
+
+  function barGradient(ctx,y,h,v,isDark){
+    let top,bottom;
+    if(v<=10){
+      top=isDark?"rgba(99,102,241,.60)":"rgba(99,102,241,.52)";
+      bottom=isDark?"rgba(236,72,153,.22)":"rgba(236,72,153,.18)";
+    }else if(v<=20){
+      top=isDark?"rgba(251,191,36,.62)":"rgba(251,191,36,.54)";
+      bottom=isDark?"rgba(239,68,68,.24)":"rgba(239,68,68,.18)";
+    }else{
+      top=isDark?"rgba(239,68,68,.72)":"rgba(239,68,68,.60)";
+      bottom=isDark?"rgba(127,29,29,.34)":"rgba(127,29,29,.22)";
+    }
+    const g=ctx.createLinearGradient(0,y,0,y+Math.max(1,h));
+    g.addColorStop(0,top); g.addColorStop(1,bottom);
+    return g;
+  }
+
+  function showToast(title, text){
+    toastTitle.textContent = title;
+    toastText.textContent = text;
+    toast.style.display = "block";
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>{ toast.style.display="none"; }, 2200);
+  }
+  toastClose.addEventListener("click", ()=>toast.style.display="none");
+
+  function updateGoalUI(todayCount){
+    const limit = Math.max(1, Number(state.goal_per_day||20));
+    const ratio = todayCount / limit;
+
+    $("goalText").textContent = `${todayCount} / ${limit}`;
+    const pct = Math.min(1, ratio);
+    const fill = $("goalFill");
+    fill.style.width = `${Math.round(pct*100)}%`;
+
+    if (ratio <= 0.60) fill.style.backgroundColor = "rgba(99,102,241,.55)";
+    else if (ratio <= 1.0) fill.style.backgroundColor = "rgba(251,191,36,.70)";
+    else fill.style.backgroundColor = "rgba(239,68,68,.75)";
+
+    const b = $("badgeLimit");
+    if(ratio<=1) { b.textContent="в лимите"; b.style.borderColor="rgba(99,102,241,.22)"; }
+    else { b.textContent="превышен"; b.style.borderColor="rgba(239,68,68,.28)"; }
+  }
+
+  // FIX: срабатывает строго на (limit + 1), один раз в день (для этого лимита)
+  function autoSlipIfExceeded(todayCount){
+    const limit = Math.max(1, Number(state.goal_per_day||20));
+    const tk = dayKey(new Date());
+
+    const already = (state.auto_slip_day === tk && state.auto_slip_limit === limit);
+    if (already) return false;
+
+    if (todayCount === limit + 1) {
+      state.auto_slip_day = tk;
+      state.auto_slip_limit = limit;
+
+      state.slips_total = Number(state.slips_total||0) + 1;
+      state.slips = state.slips || [];
+      state.slips.push({ t: new Date().toISOString(), note: `Авто-срыв: превышен лимит ${limit} (стало ${todayCount})` });
+
+      state.quit_at = new Date().toISOString();
+      save();
+
+      $("timer").textContent = "00:00:00";
+
+      haptic("heavy");
+      showToast("Срыв по лимиту", `Лимит: ${limit}\nСегодня: ${todayCount}\nТаймер сброшен`);
+      return true;
+    }
+    return false;
+  }
+
+  function renderAnalytics(){
+    const data = puffsLast7Days();
+    const counts = data.map(x=>x.count);
+    const total = counts.reduce((a,b)=>a+b,0);
+    const avg = total/7;
+
+    let bestIdx = 0;
+    for(let i=1;i<counts.length;i++) if(counts[i] > counts[bestIdx]) bestIdx=i;
+
+    const bestDay = data[bestIdx].date.toLocaleDateString("ru-RU",{weekday:"short", day:"2-digit", month:"2-digit"});
+    const limit = Math.max(1, Number(state.goal_per_day||20));
+    const daysInLimit = counts.filter(v=>v<=limit).length;
+
+    $("a7Total").textContent = String(total);
+    $("a7Avg").textContent = avg.toFixed(avg<10?1:0);
+    $("aBestDay").textContent = bestDay;
+    $("aInLimit").textContent = `${daysInLimit}/7`;
+
+    const list = $("slipList");
+    const items = (state.slips||[]).slice().reverse().slice(0,6);
+    if(!items.length){
+      list.innerHTML = `<div class="rowItem"><div><div style="font-weight:950">Срывов нет</div><div class="small">Так держать</div></div><div class="badge">OK</div></div>`;
+    } else {
+      list.innerHTML = items.map(s=>{
+        const d = new Date(s.t);
+        const ds = d.toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit"});
+        const ts = d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+        const note = (s.note||"").slice(0,90);
+        const auto = note.includes("Авто-срыв") ? "авто" : "ручн";
+        return `
+          <div class="rowItem">
+            <div>
+              <div style="font-weight:950">${ds} • ${ts}</div>
+              <div class="small">${note || "—"}</div>
+            </div>
+            <div class="badge">${auto}</div>
+          </div>
+        `;
+      }).join("");
+    }
+  }
+
+  const rafById = Object.create(null);
+  const chartCache = { chartHome: { last: null, hit: null }, chartAna:  { last: null, hit: null } };
+
+  function scaleMaxFrom(counts){
+    const maxVal=Math.max(0,...counts);
+    const rounded=Math.ceil(maxVal/10)*10;
+    return Math.max(40, rounded||40);
+  }
+
+  function drawChart(canvasId, forceNoAnim=false){
+    const c=$(canvasId); if(!c||!c.getContext) return;
+    const ctx=c.getContext("2d");
+    const w=c.width, h=c.height;
+
+    const isDark = tg ? (tg.colorScheme==="dark") : false;
+    const data=puffsLast7Days();
+    const counts=data.map(x=>x.count);
+    const scaleMax=scaleMaxFrom(counts);
+
+    const pad=22, innerW=w-pad*2, innerH=h-pad*2, gap=10;
+    const barW=(innerW-gap*6)/7;
+
+    const axis=getComputedStyle(document.documentElement).getPropertyValue("--axis").trim();
+    const track=getComputedStyle(document.documentElement).getPropertyValue("--track").trim();
+
+    const target=counts.map(v => (Math.max(0,v)/scaleMax)*innerH);
+
+    const cache = chartCache[canvasId];
+    if(!cache.last || forceNoAnim) cache.last = target.slice();
+
+    const from = cache.last.slice();
+    const startTs=performance.now();
+    const dur = forceNoAnim ? 1 : 140;
+
+    if(rafById[canvasId]) cancelAnimationFrame(rafById[canvasId]);
+
+    const frame=(t)=>{
+      const k=Math.min(1,(t-startTs)/dur);
+      const e = forceNoAnim ? 1 : (1-Math.pow(1-k,3));
+
+      ctx.clearRect(0,0,w,h);
+      ctx.fillStyle=track;
+      roundRect(ctx,0,0,w,h,16); ctx.fill();
+
+      ctx.strokeStyle=axis; ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(pad,pad+innerH);
+      ctx.lineTo(pad+innerW,pad+innerH);
+      ctx.stroke();
+
+      const hit=[];
+      for(let i=0;i<7;i++){
+        const v=counts[i];
+        const bh = from[i] + (target[i]-from[i]) * e;
+        const x=pad + i*(barW+gap);
+        const y=pad + innerH - bh;
+        hit.push({ i, x, y: pad, w: barW, h: innerH });
+
+        ctx.fillStyle=isDark?"rgba(255,255,255,.05)":"rgba(15,23,42,.04)";
+        roundRect(ctx, x, pad+innerH-6, barW, 6, 6); ctx.fill();
+
+        if(bh>0.8){
+          ctx.fillStyle = barGradient(ctx,y,bh,v,isDark);
+          roundRect(ctx,x,y,barW,bh,10);
+          ctx.fill();
+        }
+      }
+
+      if(k<1) rafById[canvasId]=requestAnimationFrame(frame);
+      else {
+        rafById[canvasId]=null;
+        cache.last = target.slice();
+        cache.hit = hit;
+      }
+    };
+
+    rafById[canvasId]=requestAnimationFrame(frame);
+  }
+
+  function drawAllCharts(forceNoAnim=false){
+    drawChart("chartHome", forceNoAnim);
+    drawChart("chartAna", forceNoAnim);
+  }
+
+  function render(){
+    if (!state.quit_at) $("timer").textContent = "00:00:00";
+    else {
+      const sec = Math.max(0, Math.floor((Date.now() - Date.parse(state.quit_at)) / 1000));
+      $("timer").textContent = fmtDuration(sec);
+    }
+
+    $("best").textContent = fmtDuration(state.streak_best_seconds || 0);
+    $("saved").textContent = moneyFormat(moneySaved(), state.currency);
+
+    const pt = puffsToday();
+    $("kpiPuffs").textContent = String(pt);
+    $("kpiSlips").textContent = String(state.slips_total || 0);
+    $("chartHint").textContent = `сегодня: ${pt}`;
+    $("todayLine").textContent = `Сегодня: затяжек ${pt} • экономия ~ ${moneyFormat(moneySaved(), state.currency)}`;
+
+    undoBtn.style.opacity = pt > 0 ? "1" : ".35";
+    undoBtn.disabled = pt <= 0;
+
+    updateGoalUI(pt);
+    renderAnalytics();
+    drawAllCharts(false);
+    save();
+  }
+
+  function tick(){
+    if(!state.quit_at) return;
+    const sec=Math.max(0, Math.floor((Date.now()-Date.parse(state.quit_at))/1000));
+    $("timer").textContent=fmtDuration(sec);
+    if(sec>(state.streak_best_seconds||0)){ state.streak_best_seconds=sec; save(); $("best").textContent=fmtDuration(sec); }
+    $("saved").textContent = moneyFormat(moneySaved(), state.currency);
+  }
+
+  $("btnNow").addEventListener("click", ()=>{
+    clearErr(); haptic("light");
+    state.quit_at=new Date().toISOString();
+    save(); render();
+  });
+
+  $("btnPuff").addEventListener("click", ()=>{
+    clearErr(); haptic("light");
+    state.puffs=state.puffs||[];
+    state.puffs.push({t:new Date().toISOString()});
+    save();
+
+    const pt = puffsToday();
+    autoSlipIfExceeded(pt); // FIX: строго limit+1
+    render();
+  });
+
+  $("btnSlip").addEventListener("click", ()=>{
+    clearErr(); haptic("heavy");
+    const note=prompt("Причина срыва","")||"";
+    state.slips_total=Number(state.slips_total||0)+1;
+    state.slips=state.slips||[];
+    state.slips.push({t:new Date().toISOString(), note: note.slice(0,200)});
+    const reset=confirm("Сбросить таймер (последний раз = сейчас)?");
+    if(reset) state.quit_at=new Date().toISOString();
+    save(); render();
+  });
+
+  undoBtn.addEventListener("click", ()=>{
+    clearErr();
+    if(!state.puffs||!state.puffs.length) return;
+    const tk=dayKey(new Date());
+    for(let i=state.puffs.length-1;i>=0;i--){
+      if(dayKey(new Date(state.puffs[i].t))===tk){
+        haptic("medium");
+        state.puffs.splice(i,1);
+
+        // FIX: если отменили — разрешаем авто-срыв снова, если он был сегодня на этом лимите
+        const limit = Math.max(1, Number(state.goal_per_day||20));
+        const today = dayKey(new Date());
+        const pt = puffsToday(); // после splice, но до save — лучше пересчитать позже
+        save();
+        // Если авто-срыв уже был сегодня, но мы откатились ниже/вровень — логичнее сбросить флаг
+        // чтобы при следующем достижении limit+1 снова сработало корректно.
+        if(state.auto_slip_day === today && state.auto_slip_limit === limit){
+          const newPt = puffsToday();
+          if(newPt <= limit) { state.auto_slip_day=null; state.auto_slip_limit=null; save(); }
+        }
+
+        render();
+        return;
+      }
+    }
+  });
+
+  toastClose.addEventListener("click", ()=>toast.style.display="none");
+
+  // SETTINGS: FIX — блокируем фон и скролл, чтобы не "просвечивало"
+  function openSettings(){
+    haptic("light");
+    document.body.classList.add("modalOpen"); // FIX
+    sheetBack.style.display="flex";
+    sheetBack.setAttribute("aria-hidden","false");
+    // FIX: стопаем скролл на обоих скроллерах
+    scrollers.forEach(s=>{ if(s) s.style.overflowY="hidden"; });
+  }
+  function closeSettings(){
+    sheetBack.style.display="none";
+    sheetBack.setAttribute("aria-hidden","true");
+    document.body.classList.remove("modalOpen"); // FIX
+    scrollers.forEach(s=>{ if(s) s.style.overflowY="auto"; });
+  }
+  btnSettings.addEventListener("click", openSettings);
+  sheetClose.addEventListener("click", closeSettings);
+  sheetBack.addEventListener("click", (e)=>{ if(e.target===sheetBack) closeSettings(); });
+
+  $("btnSaveSettings").addEventListener("click", ()=>{
+    clearErr(); haptic("light");
+    state.cost_per_day = Number($("costPerDay").value||0);
+    state.currency = $("currency").value||"EUR";
+    state.goal_per_day = Math.max(1, Number($("goalPerDay").value||20));
+
+    // FIX: при смене лимита авто-срыв должен срабатывать по новому лимиту
+    state.auto_slip_day = null;
+    state.auto_slip_limit = null;
+
+    save();
+    closeSettings();
+    render();
+    showToast("Сохранено", "Настройки обновлены");
+  });
+
+  // ===== Swipe pager (2 страницы => 0% и -50%) =====
+  function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
+  function lockScroll(lock){
+    for(const s of scrollers){
+      if(!s) continue;
+      s.style.overflowY = lock ? "hidden" : "auto";
+    }
+  }
+
+  let pageIndex = 0;
+  let startX=0, startY=0, dx=0, dy=0, dragging=false;
+
+  const pageTranslate = (idx)=> -50 * idx;
+
+  function setPage(i, withHaptic=true){
+    pageIndex = clamp(i, 0, 1);
+    pagesEl.style.transition = "transform .26s cubic-bezier(.22,.8,.18,1)";
+    pagesEl.style.transform = `translateX(${pageTranslate(pageIndex)}%)`;
+    dots.forEach((d,idx)=>d.classList.toggle("active", idx===pageIndex));
+    if(withHaptic) haptic("light");
+    setTimeout(()=>drawAllCharts(true), 60);
+  }
+  dots[0].addEventListener("click", ()=>setPage(0));
+  dots[1].addEventListener("click", ()=>setPage(1));
+
+  pagerEl.addEventListener("touchstart", (e)=>{
+    if(sheetBack.style.display==="flex") return;
+    if(e.touches.length!==1) return;
+    dragging=true; dx=0; dy=0;
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+    pagesEl.style.transition="none";
+  }, {passive:true});
+
+  pagerEl.addEventListener("touchmove", (e)=>{
+    if(!dragging) return;
+    const x=e.touches[0].clientX;
+    const y=e.touches[0].clientY;
+    dx = x - startX;
+    dy = y - startY;
+
+    const absX=Math.abs(dx), absY=Math.abs(dy);
+
+    if(absX > absY && absX > 6){
+      e.preventDefault();
+      lockScroll(true);
+
+      const w = pagerEl.getBoundingClientRect().width || 1;
+      const pct = (dx / w) * 50;
+      const base = pageTranslate(pageIndex);
+
+      let next = base + pct;
+
+      if (pageIndex === 0 && next > 0) next = next * 0.35;
+      if (pageIndex === 1 && next < -50) next = -50 + (next + 50) * 0.35;
+
+      next = clamp(next, -50, 0);
+      pagesEl.style.transform = `translateX(${next}%)`;
+      return;
+    }
+
+    if(absY > absX && absY > 10){
+      dragging=false;
+      lockScroll(false);
+      pagesEl.style.transition="transform .26s cubic-bezier(.22,.8,.18,1)";
+      pagesEl.style.transform = `translateX(${pageTranslate(pageIndex)}%)`;
+    }
+  }, {passive:false});
+
+  function finishSwipe(){
+    lockScroll(false);
+    if(!dragging) return;
+    dragging=false;
+
+    const w = pagerEl.getBoundingClientRect().width || 1;
+    const pct = (dx / w) * 50;
+
+    if(pct < -9) setPage(pageIndex+1);
+    else if(pct > 9) setPage(pageIndex-1);
+    else setPage(pageIndex, false);
+  }
+  pagerEl.addEventListener("touchend", finishSwipe, {passive:true});
+  pagerEl.addEventListener("touchcancel", finishSwipe, {passive:true});
+
+  // init
+  setPage(0, false);
+  render();
+  setInterval(tick, 250);
+});
+</script>
+</body>
+</html>
