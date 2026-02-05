@@ -381,7 +381,7 @@
     <header>
       <div class="brand">
         <div class="t1">Puffless</div>
-        <div class="t2">лимит в день • прогресс • неделя</div>
+        <div class="t2">Победи свои вребные привычки</div>
       </div>
       <div class="rightHead">
         <button class="miniBtn" id="btnSettings" type="button">Настройки</button>
@@ -709,7 +709,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function save(){
     safeSet(KEY, JSON.stringify(state));
-    if(noteEl) noteEl.textContent = storageOk ? "Сохранение: OK" : "Сохранение: недоступно (временно)";
+    if(noteEl) noteEl.textContent = storageOk ? "Сохранение: Успешно" : "Сохранение: недоступно (временно)";
   }
 
   const todayK=dayKey(new Date());
@@ -867,7 +867,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const list = $("slipList");
     const items = (state.slips||[]).slice().reverse().slice(0,6);
     if(!items.length){
-      list.innerHTML = `<div class="rowItem"><div><div style="font-weight:950">Срывов нет</div><div class="small">Так держать</div></div><div class="badge">OK</div></div>`;
+      list.innerHTML = `<div class="rowItem"><div><div style="font-weight:950">Срывов нет</div><div class="small">Так держать</div></div><div class="badge"></div></div>`;
     } else {
       list.innerHTML = items.map(s=>{
         const d = new Date(s.t);
